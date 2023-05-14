@@ -1,0 +1,84 @@
+set nodes [getNodeTags];
+set ndf_max 1;
+set total_mass {0.0 0.0 0.0};
+set mass_labels {"MX"};
+set mass_labels1 {"MODE" "MX"};
+foreach node $nodes {
+		set indf [llength [nodeDisp $node]]
+		for {set i 0} {$i < $indf} {incr i} {
+			set imass [nodeMass $node [expr $i+1]]
+			set imass_total [lindex $total_mass $i]
+			lset total_mass $i [expr $imass_total + $imass]
+		}
+	}
+set pi [expr acos(-1.0)];
+set lambdas [eigen -fullGenLapack $num_modes];
+record;
+set mode_data [lrepeat $num_modes [lrepeat 4 0.0]];
+set mode_MPM [lrepeat $num_modes [lrepeat $ndf_max 0.0]];
+for {set imode 0} {$imode < $num_modes} {incr imode} {
+		set lambda [lindex $lambdas $imode];
+		set omega [expr {sqrt($lambda)}];
+		set frequency [expr $omega / 2.0 / $pi];
+		set period [expr 1.0 / $frequency];
+		lset mode_data $imode [list $lambda $omega $frequency $period];
+		set L [lrepeat $ndf_max 0.0];
+		set gm 0.0;
+		foreach node $nodes {
+			set V [nodeEigenvector $node [expr $imode+1]];
+			set indf [llength [nodeDisp $node]];
+			for {set i 0} {$i < $indf} {incr i} {
+				set Mi [nodeMass $node [expr $i+1]];
+				set Vi [lindex $V $i];
+				set Li [expr $Mi * $Vi];
+				set gm [expr $gm + $Vi * $Vi * $Mi];
+				lset L $i [expr [lindex $L $i]+ $Li];
+			}
+		}
+		set MPM [lrepeat $ndf_max 0.0];
+		for {set i 0} {$i < $ndf_max} {incr i} {
+			set Li [lindex $L $i];
+			set TMi [lindex $total_mass $i];
+			set MPMi [expr $Li * $Li];
+			if {$gm > 0.0} {set MPMi [expr $MPMi / $gm]};
+			if {$TMi > 0.0} {set MPMi [expr $MPMi / $TMi * 100.0]};
+			lset MPM $i $MPMi;
+		}
+		lset mode_MPM $imode $MPM;
+	}
+set fp [open $filename w];
+puts $fp "MODAL ANALYSIS REPORT";
+set format_string [string repeat "%16s" 5];
+set format_double [string repeat "%16g" 5];
+puts $fp "EIGENVALUE ANALYSIS";
+set format_string [string repeat "%16s" 5];
+set format_double [string repeat "%16g" 5];
+puts $fp [format $format_string "MODE" "LAMBDA" "OMEGA" "FREQUENCY" "PERIOD"];
+for {set i 0} {$i < $num_modes} {incr i} {
+	puts $fp [format $format_double [expr $i+1] {*}[lindex $mode_data $i]];
+}	
+puts $fp "TOTAL MASS OF THE STRUCTURE";
+set format_string [string repeat "%16s" $ndf_max];
+set format_double [string repeat "%16g" $ndf_max];
+puts $fp [format $format_string {*}$mass_labels];
+puts $fp [format $format_double {*}$total_mass];
+puts $fp "MODAL PARTICIPATION MASSES (%)";
+set format_string [string repeat "%16s" [expr $ndf_max+1]];
+set format_double [string repeat "%16g" [expr $ndf_max+1]];
+puts $fp [format $format_string {*}$mass_labels1];
+for {set i 0} {$i < $num_modes} {incr i} {
+	puts $fp [format $format_double [expr $i+1] {*}[lindex $mode_MPM $i]];
+}	
+puts $fp "CUMULATIVE MODAL PARTICIPATION MASSES (%)";
+set format_string [string repeat "%16s" [expr $ndf_max+1]];
+set format_double [string repeat "%16g" [expr $ndf_max+1]];
+puts $fp [format $format_string {*}$mass_labels1];
+set MPMsum [lrepeat $ndf_max 0.0];
+for {set i 0} {$i < $num_modes} {incr i} {
+	set MPMi [lindex $mode_MPM $i];
+	for {set j 0} {$j < $ndf_max} {incr j} {
+		lset MPMsum $j [expr [lindex $MPMsum $j] + [lindex $MPMi $j]]
+	}
+	puts $fp [format $format_double [expr $i+1] {*}$MPMsum];
+}		
+close $fp;

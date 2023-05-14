@@ -1,0 +1,38 @@
+# ---------------------------------- in case of convergence problems
+if {$ok != 0} {      
+# change some analysis parameters to achieve convergence
+# performance is slower inside this loop
+	set ok 0;
+	set controlDisp 0.0;		# start from zero
+	set D0 0.0;		# start from zero
+	set Dstep [expr ($controlDisp-$D0)/($Dmax-$D0)]
+	set Tol 1.0e-9;
+	set maxNumIter 100;
+	set TestType EnergyIncr;
+	set algorithmType Newton;
+	while {$Dstep < 1.0 && $ok == 0} {	
+		set controlDisp [nodeDisp $IDctrlNode $IDctrlDOF ]
+		set Dstep [expr ($controlDisp-$D0)/($Dmax-$D0)]
+		set ok [analyze 1 ]
+		if {$ok != 0} {
+			puts "Trying Newton with Initial Tangent .."
+			test NormDispIncr   $Tol 2000  0
+			algorithm Newton -initial
+			set ok [analyze 1 ]
+			test $TestType $Tol $maxNumIter  0
+			algorithm $algorithmType
+		}
+		if {$ok != 0} {
+			puts "Trying Broyden .."
+			algorithm Broyden 8
+			set ok [analyze 1 ]
+			algorithm $algorithmType
+		}
+		if {$ok != 0} {
+			puts "Trying NewtonWithLineSearch .."
+			algorithm NewtonLineSearch .8
+			set ok [analyze 1 ]
+			algorithm $algorithmType
+		}
+	}
+	};      # end if ok !0
