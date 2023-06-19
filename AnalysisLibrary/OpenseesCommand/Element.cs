@@ -92,13 +92,15 @@ namespace TempAnalysis.OpenseesCommand
         {
 
         }
-        public FrameElasticElement(IDsManager IDM, BaseNode Start, BaseNode End, int Geom, ElasticSectionProperties Properties) : base(IDM, Start, End, Geom)
+        public FrameElasticElement(IDsManager IDM, BaseNode Start, BaseNode End, int Geom, 
+            ElasticSectionProperties Properties) : base(IDM, Start, End, Geom)
         {
             this.Properties = Properties;
         }
         public override void WriteCommand(StreamWriter writer)
         {
-            writer.WriteLine($"element elasticBeamColumn {_ID} {StartNode.ID} {EndNode.ID} {Properties} {GomTransForm};");
+            writer.WriteLine($"element elasticBeamColumn {_ID} {StartNode.ID} {EndNode.ID} " +
+                $"{Properties} {GomTransForm};");
         }
     }
 

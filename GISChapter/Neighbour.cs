@@ -124,11 +124,38 @@ namespace GISChapter
         public int Buildings { get; set; }
         [DataMember]
         public  List<Point3D> Polygon { get; set; } = new List<Point3D>();
+        [DataMember]
+        public Point3D PointLocation { get; set; }
+        [DataMember]
+        public BuildingInventory BuildingInventory { get; set; } 
+        [DataMember]
+        public BuildingResult BuildingResult { get; set; }
 
+        public void AssignModels(List<KeyValuePair<ArchTypesGroup,float>> GroupsRatios, bool HR)
+        {
+            foreach (KeyValuePair<ArchTypesGroup,float> pair in GroupsRatios)
+            {
+                ArchTypesGroup group = pair.Key;
+                if (group.HR != HR)
+                    continue;
+                float ratio = pair.Value;
+                int count = (int)(ratio * Buildings / (float)group.ArchTypes.Count);
+                List<BuildingModel> buildingModels = group.ArchTypes.Select(a => new BuildingModel { ID = ++Building_ID , ArchType = a, Count = count }).ToList();
+                if (HR)
+                    BuildingInventory.HR_Buildings.AddRange(buildingModels);
+                else
+                    BuildingInventory.LR_Buildings.AddRange(buildingModels);
+            }
+            BuildingInventory.AssignLocations(PointLocation);
+        }
+        public List<BuildingModel> GetBuildingModels() 
+        {
+            return BuildingInventory.LR_Buildings.Concat(BuildingInventory.HR_Buildings).ToList();
+        }
         internal void WriteJSON(StreamWriter file, bool Last)
         {
             string Space = "\t" + "\t";
-            string Space2  = Space + "\t";
+            string Space2 = Space + "\t";
             string Space3 = Space2 + "\t";
             string Space4 = Space3 + "\t";
             string Space5 = Space4 + "\t";
@@ -150,7 +177,7 @@ namespace GISChapter
 
             file.WriteLine(Space4 + "[");
             int i = 1;
-            for (; i < Polygon.Count-1; i++)
+            for (; i < Polygon.Count - 1; i++)
             {
                 file.WriteLine(Space5 + $"[{Polygon[i].X},{Polygon[i].Y},{Polygon[i].Z}],");
             }
@@ -159,35 +186,7 @@ namespace GISChapter
             file.WriteLine(Space4 + "]");
             file.WriteLine(Space3 + "]");
             file.WriteLine(Space2 + "}");
-            file.WriteLine(Space + "}"+ (Last?"":","));
-        }
-
-        [DataMember]
-        public Point3D PointLocation { get; set; }
-        [DataMember]
-        public BuildingInventory BuildingInventory { get; set; } 
-        [DataMember]
-        public BuildingResult BuildingResult { get; set; }
-        public void AssignModels(List<KeyValuePair<ArchTypesGroup,float>> GroupsRatios, bool HR)
-        {
-            foreach (KeyValuePair<ArchTypesGroup,float> pair in GroupsRatios)
-            {
-                ArchTypesGroup group = pair.Key;
-                if (group.HR != HR)
-                    continue;
-                float ratio = pair.Value;
-                int count = (int)(ratio * Buildings / (float)group.ArchTypes.Count);
-                List<BuildingModel> buildingModels = group.ArchTypes.Select(a => new BuildingModel { ID = ++Building_ID , ArchType = a, Count = count }).ToList();
-                if (HR)
-                    BuildingInventory.HR_Buildings.AddRange(buildingModels);
-                else
-                    BuildingInventory.LR_Buildings.AddRange(buildingModels);
-            }
-            BuildingInventory.AssignLocations(PointLocation);
-        }
-        public List<BuildingModel> GetBuildingModels() 
-        {
-            return BuildingInventory.LR_Buildings.Concat(BuildingInventory.HR_Buildings).ToList();
+            file.WriteLine(Space + "}" + (Last ? "" : ","));
         }
     }
 

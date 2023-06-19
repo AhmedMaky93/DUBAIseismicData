@@ -634,7 +634,8 @@ namespace TempAnalysis.Models
         {
 
         }
-        public DetailedModel(string Name, int NumOfFloors, ModelMaterialsInfo MateialsInfo, LayoutUtility LayoutUtility)
+        public DetailedModel(string Name, int NumOfFloors, ModelMaterialsInfo MateialsInfo
+            , LayoutUtility LayoutUtility)
         {
             this.Name = Name;
             Project.LogAction($"Creating Model:{Name}");

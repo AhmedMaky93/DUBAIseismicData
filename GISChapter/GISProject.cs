@@ -91,18 +91,25 @@ namespace GISChapter
         }
         public async Task Run(bool FromStart)
         {
+            // Reset the current state to the first stage
             if (FromStart)
                 SetState(ProjectState.ReadData);
+            // Reade .CSV data Neighbours (Name, polygon , Number of builsings, Classification)
             if (State == ProjectState.ReadData)
                 ReadData();
+            // Assign buildings of 
             if (State == ProjectState.InitModels)
                 InitModes();
+            // Create Input Spread Sheets for R2D
             if (State == ProjectState.WriteInputFiles)
                 WriteInputFiles();
+            // Read Results From R2D Log File (After moving them to Local Folder)
             if (State == ProjectState.ReadAnalysisResults)
                 ReadResults();
+            // Genrate ,CSV files for results staistics per archetype, archetype group, neighbour
             if (State == ProjectState.WriteStatsFiles)
                 WriteOutputFiles();
+            // Write GeJson File for maps visulaization
             if (State == ProjectState.WriteStatisticalFiles)
                 WriteMapsFiles();
         }

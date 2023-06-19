@@ -134,25 +134,35 @@ namespace TempAnalysis.Models
             State = modelState;
             Serialize();
         }
+
         public async Task Run(bool FromStart, bool TestSet)
         {
+            // Reset the Model State to first step if from start is selected.
             if (FromStart)
                 SetState(ModelState.DesignGravityLoads);
+            // Relative path to the exe. to save results after each stage. 
             string folderpath = GetFolderPath();
+            // Design Columns
             if (State == ModelState.DesignGravityLoads)
                 DesignColumnsForGravityLoads(folderpath,TestSet);
+            // Design Shear walls
             if (State == ModelState.ShearWallLengthCalculate)
                 CalculateShearWallLengthes(folderpath, TestSet);
+            // Estimate Quantities
             if (State == ModelState.Estimate)
                 Estimate();
+            // report design sections, quantities in Excel Files.
             if (State == ModelState.WriteSections)
                 WriteSections(folderpath);
+            // Perform Pushover Analysis for detailed models. 
             if (State == ModelState.PreSimpling)
                 PreSimplyfingModels(folderpath,TestSet);
             if (TestSet)
                 return;
+            // Start Calibration process by trying different pa
             if (State == ModelState.StartSimpling)
                 SimplfyingModels(folderpath);
+           // Write python scripts to accomptabile with R2D inputs
             if (State == ModelState.ExportFinalTclFinalForR2D)
                 ExportModelsToOpenSeesPy(folderpath);
         }
